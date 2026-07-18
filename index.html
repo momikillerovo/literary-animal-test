@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#090b12"/>
+<title>二十封没有寄出的信</title>
+<style>
+:root{
+  --bg:#090b12;--card:rgba(22,24,34,.72);--line:rgba(255,255,255,.10);
+  --text:#f2efe9;--muted:#aaa8b2;--accent:#d8c4ff;--accent2:#9fc8ff;
+}
+*{box-sizing:border-box} html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:"Songti SC","Noto Serif SC","STSong",serif}
+body{overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:-2;background:
+radial-gradient(circle at 18% 20%,rgba(128,94,180,.22),transparent 36%),
+radial-gradient(circle at 82% 10%,rgba(73,111,160,.22),transparent 32%),
+linear-gradient(160deg,#090b12,#11131c 55%,#08090e)}
+.stars{position:fixed;inset:0;z-index:-1;opacity:.45;background-image:
+radial-gradient(circle,rgba(255,255,255,.65) 0 1px,transparent 1.2px);
+background-size:46px 46px;animation:drift 24s linear infinite}
+@keyframes drift{to{transform:translateY(46px)}}
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{width:min(720px,100%);background:var(--card);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:0 20px 80px rgba(0,0,0,.35)}
+.hidden{display:none!important}
+.eyebrow{letter-spacing:.25em;color:var(--muted);font-size:12px;text-transform:uppercase}
+h1{font-weight:500;font-size:clamp(34px,8vw,62px);line-height:1.18;margin:18px 0}
+.lead{font-size:17px;line-height:2;color:#d7d3db}
+.btn{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--text);padding:15px 18px;border-radius:16px;font-size:16px;cursor:pointer;transition:.25s;width:100%}
+.btn:hover,.btn:active{transform:translateY(-1px);background:rgba(255,255,255,.10)}
+.primary{background:linear-gradient(135deg,rgba(216,196,255,.24),rgba(159,200,255,.16));border-color:rgba(216,196,255,.4);margin-top:18px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.progress{height:4px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;flex:1}
+.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:.4s}
+.count{font-size:12px;color:var(--muted);min-width:44px;text-align:right}
+.question{font-size:clamp(23px,5.6vw,36px);line-height:1.55;margin:20px 0 24px;font-weight:500}
+.options{display:grid;gap:12px}
+.option{text-align:left;line-height:1.65}
+.fade{animation:fade .42s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.result-emoji{font-size:72px;margin-bottom:10px}
+.result-title{font-size:46px;margin:0 0 10px;font-weight:500}
+.result-sub{font-size:18px;color:#d9d4df;line-height:1.7;margin-bottom:20px}
+.meter{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}
+.metric{border:1px solid var(--line);border-radius:16px;padding:14px 10px;text-align:center;background:rgba(255,255,255,.035)}
+.metric b{display:block;font-size:22px;margin-bottom:4px}
+.metric span{font-size:12px;color:var(--muted)}
+.result-text{font-size:17px;line-height:2.05;color:#e2dde4;white-space:pre-line}
+.advice{margin:20px 0;padding:16px 18px;border-left:2px solid var(--accent);background:rgba(255,255,255,.035);line-height:1.7}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.footer{text-align:center;color:#777582;font-size:12px;margin-top:18px;line-height:1.7}
+@media(max-width:560px){
+ .wrap{padding:14px} .card{padding:22px 18px;border-radius:22px}
+ .row{grid-template-columns:1fr} .meter{grid-template-columns:1fr 1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="stars"></div>
+<div class="wrap">
+  <main class="card fade" id="start">
+    <div class="eyebrow">Twenty Unsent Letters</div>
+    <h1>二十封<br>没有寄出的信</h1>
+    <p class="lead">这不是一份性格测试。<br>它只是借二十个问题，替你辨认：你的灵魂更适合生活在哪一种动物的身体里。</p>
+    <button class="btn primary" onclick="begin()">把自己交给夜晚</button>
+    <div class="footer">所有题目与结果均为原创文学性表达。</div>
+  </main>
+
+  <main class="card hidden" id="quiz">
+    <div class="top">
+      <div class="progress"><div class="bar" id="bar"></div></div>
+      <div class="count" id="count"></div>
+    </div>
+    <section id="stage" class="fade">
+      <div class="question" id="question"></div>
+      <div class="options" id="options"></div>
+    </section>
+  </main>
+
+  <main class="card hidden" id="result">
+    <div id="resultInner" class="fade"></div>
+  </main>
+</div>
+
+<script>
+const QUESTIONS=[{"q": "如果爱是一间长期漏雨的屋子，你会怎样住下去？", "opts": [["把所有盆都摆出来，接住每一滴水。", {"tender": 3, "memory": 2}], ["修不好就离开，连钥匙也不带走。", {"freedom": 3, "cold": 1}], ["在墙上画一扇晴天的窗。", {"imagination": 3, "tender": 1}], ["坐在最湿的地方，等某个人回来。", {"memory": 3, "depth": 2}]]}, {"q": "你最害怕哪一种告别？", "opts": [["没有争吵，只是逐渐不再说话。", {"memory": 2, "cold": 2}], ["明明相爱，却各自走向不同的城市。", {"freedom": 2, "tender": 2}], ["对方先忘了你。", {"memory": 3, "depth": 1}], ["你先不再爱了。", {"cold": 2, "depth": 2}]]}, {"q": "凌晨两点，你忽然醒来，窗外没有风。你最可能做什么？", "opts": [["翻旧聊天记录，像翻一本坏掉的圣经。", {"memory": 3, "depth": 1}], ["走到厨房喝水，假装什么也没发生。", {"cold": 2, "tender": 1}], ["开窗，让夜晚进来坐一会儿。", {"imagination": 3, "freedom": 1}], ["继续睡，梦里比现实诚实。", {"depth": 2, "imagination": 2}]]}, {"q": "如果可以删掉人生中的一种疼痛，你会删掉：", "opts": [["失恋。", {"tender": 2, "memory": 1}], ["羞耻。", {"cold": 2, "depth": 1}], ["等待。", {"freedom": 2, "memory": 1}], ["都不删。疼痛至少证明我曾经认真活过。", {"depth": 3, "tender": 1}]]}, {"q": "你愿意把一封永远不会寄出的信放在哪里？", "opts": [["压进一本再也不会打开的书。", {"memory": 3}], ["烧掉，让火替我读完。", {"freedom": 2, "cold": 1}], ["塞进衣柜最深处，等多年后偶然发现。", {"memory": 2, "tender": 1}], ["折成纸船，放进没有尽头的水里。", {"imagination": 3, "depth": 1}]]}, {"q": "如果死亡只是换一种天气，你希望它是：", "opts": [["一场很轻的雪。", {"cold": 2, "tender": 1}], ["凌晨四点的雾。", {"depth": 2, "imagination": 2}], ["盛夏暴雨。", {"freedom": 2, "depth": 1}], ["没有天气，只有一片安静的海。", {"depth": 3}]]}, {"q": "你怎样确认一个人真的爱过你？", "opts": [["他记得你说过的微不足道的小事。", {"tender": 3, "memory": 1}], ["他愿意为你改变计划。", {"tender": 2, "depth": 1}], ["他离开后仍没有说你的坏话。", {"cold": 1, "tender": 2}], ["我从不确认。爱本来就是无法核验的旧传说。", {"imagination": 2, "depth": 2}]]}, {"q": "你更像哪一种沉默？", "opts": [["雪落在屋顶。", {"cold": 2, "tender": 1}], ["鲸在深海唱歌。", {"depth": 3}], ["猫躲进没有人的房间。", {"freedom": 2, "memory": 1}], ["火熄灭后的灰。", {"memory": 2, "cold": 2}]]}, {"q": "如果一生只能保留一个场景，你会留下：", "opts": [["有人在远处朝你跑来。", {"tender": 3}], ["一场旅行中无人知晓的黄昏。", {"freedom": 2, "imagination": 2}], ["童年房间里下午四点的光。", {"memory": 3}], ["海边，什么人也没有。", {"depth": 2, "freedom": 2}]]}, {"q": "你如何看待遗憾？", "opts": [["它是爱留下的证据。", {"memory": 2, "tender": 2}], ["它是时间收取的利息。", {"depth": 2, "cold": 1}], ["它只是一个没走完的岔路口。", {"freedom": 2}], ["我把它养在身体里，像养一只不肯长大的兽。", {"imagination": 2, "memory": 2}]]}, {"q": "当你开始恨一个人，最先变化的是：", "opts": [["我不再期待他的解释。", {"cold": 3}], ["我开始反复想起爱过他的证据。", {"memory": 3, "depth": 1}], ["我把自己的柔软藏起来。", {"cold": 2, "tender": 1}], ["我仍然关心，只是不再承认。", {"tender": 2, "memory": 2}]]}, {"q": "如果可以重活一次，你最想改变什么？", "opts": [["更早地离开不适合的人。", {"freedom": 3}], ["更勇敢地说爱。", {"tender": 3}], ["更少地责怪自己。", {"depth": 2, "tender": 1}], ["什么都不改。我只想重新看一遍那些光。", {"memory": 2, "imagination": 2}]]}, {"q": "你觉得孤独更像：", "opts": [["一座一直亮着灯的空房间。", {"memory": 2, "depth": 1}], ["没有名字的海岸。", {"freedom": 2, "depth": 2}], ["一件穿久了的旧外套。", {"tender": 1, "memory": 2}], ["身体里第二颗不肯睡觉的心。", {"imagination": 2, "depth": 2}]]}, {"q": "如果有人问你：爱到底是什么？你会回答：", "opts": [["是愿意把自己的一部分时间交给另一个人。", {"tender": 3}], ["是误会，是投射，是美丽的偏差。", {"cold": 2, "depth": 1}], ["是明知道会失去，仍然靠近。", {"depth": 2, "tender": 2}], ["是我们为了不承认孤独而发明的神话。", {"imagination": 2, "cold": 1}]]}, {"q": "你希望别人怎样记住你？", "opts": [["记得我曾经温柔。", {"tender": 3}], ["记得我曾经自由。", {"freedom": 3}], ["记得我曾经真的看见过他们。", {"depth": 2, "tender": 1}], ["最好不要太清楚，像记得一场梦。", {"imagination": 3}]]}, {"q": "如果你必须在今天失去一样东西：", "opts": [["关于某个人的全部记忆。", {"cold": 2, "freedom": 1}], ["再爱上别人的能力。", {"memory": 2, "depth": 1}], ["被任何人理解的可能。", {"depth": 3}], ["对未来的期待。", {"cold": 2, "memory": 1}]]}, {"q": "你相信轮回吗？", "opts": [["相信，因为有些人像是迟到太久的重逢。", {"memory": 2, "imagination": 2}], ["不相信，所以每一次爱都必须尽兴。", {"freedom": 2, "tender": 2}], ["如果还能遇见同一个人，我就相信。", {"memory": 3, "tender": 1}], ["我只希望下辈子做一棵树，不再解释。", {"cold": 1, "depth": 2}]]}, {"q": "如果爱你的那个人终于离开，你会：", "opts": [["把生活恢复原样，只是永远少一把椅子。", {"memory": 3}], ["立刻出发，去一个他不知道的地方。", {"freedom": 3}], ["慢慢原谅，连同自己一起。", {"tender": 2, "depth": 1}], ["不做什么。离开也是爱的一种完成。", {"depth": 3, "cold": 1}]]}, {"q": "哪句话最像你心里没说出口的那一句？", "opts": [["我其实一直在等你回头。", {"memory": 3}], ["我不恨你，我只是不能再爱你。", {"cold": 2, "tender": 1}], ["请你忘记我最狼狈的样子。", {"depth": 2, "cold": 1}], ["那天的月亮很好，只是我们没有以后。", {"imagination": 2, "memory": 2}]]}, {"q": "最后一题：如果世界明天结束，你今晚会去哪里？", "opts": [["去见最爱的人，不问他还爱不爱我。", {"tender": 3, "depth": 1}], ["去海边，听最后一次退潮。", {"depth": 2, "freedom": 2}], ["回到小时候住过的地方。", {"memory": 3}], ["什么地方也不去。我要看着世界自己熄灭。", {"cold": 2, "imagination": 2}]]}];
+const RESULTS={"鲸鱼": {"key": "depth", "emoji": "🐋", "subtitle": "你把所有巨大的声音，都藏在海面以下。", "text": "你不是悲伤，你只是太擅长沉默。别人看见你平静地生活，却不知道你的身体里有一整片海，潮汐从不向任何人报备。你爱得深，也失去得慢。那些别人已经翻篇的往事，会在你心底继续游动，偶尔撞响一座无人知晓的钟。你并不需要太多人靠近；你只需要一个愿意潜到足够深处、听懂你歌声的人。", "advice": "今日建议：去看一片水，不解释自己。"}, "夜鹿": {"key": "tender", "emoji": "🦌", "subtitle": "你在最黑的林子里，仍然保留温柔。", "text": "你拥有一种不合时宜的善良。即使受过伤，你仍愿意为别人把门留一条缝。你对爱并不天真，只是明知世间粗糙，仍不愿让自己也变得粗糙。你会因为一句无心的话难过很久，也会因为一个很小的善意重新相信生活。你的温柔不是软弱，而是一种昂贵的坚持。", "advice": "今日建议：不要把所有体谅都给别人。"}, "白狐": {"key": "freedom", "emoji": "🦊", "subtitle": "你擅长离开，却不擅长真正告别。", "text": "你看起来潇洒，像任何地方都留不住你。可你真正想逃离的，往往不是某个人，而是那个在爱里逐渐失去边界的自己。你需要自由，需要旷野，需要一扇随时可以推开的门。你不是不深情，只是不能被占有。对你而言，最好的爱不是捆绑，而是两个人各自完整，却仍愿意并肩走一段路。", "advice": "今日建议：离开不是罪，但请别忘了说再见。"}, "灰鹭": {"key": "cold", "emoji": "🪶", "subtitle": "你站在水边，像站在自己之外。", "text": "你习惯先观察，再决定要不要靠近。你的冷静常常被误解成冷漠，其实只是因为你太早知道：感情如果没有边界，就会长成吞没人的潮水。你有非常清楚的自我保护，也有不轻易示人的脆弱。你并不拒绝爱，你只是希望爱经过审慎、尊重与克制，而不是一场情绪的洪水。", "advice": "今日建议：允许自己偶尔不那么体面。"}, "黑猫": {"key": "memory", "emoji": "🐈‍⬛", "subtitle": "你把旧日藏在身体最柔软的地方。", "text": "你不是恋旧，你只是舍不得那些曾经真实存在过的自己。某段关系结束后，你怀念的不一定是那个人，而是当时那个会毫无保留去爱的你。你记得气味、光线、语气和细节，记得别人早已忘记的下午。回忆对你来说不是牢笼，而是一间秘密档案馆。只是偶尔，你也该允许自己关灯离开。", "advice": "今日建议：整理一件旧物，然后留下或丢掉。"}, "雨燕": {"key": "imagination", "emoji": "🐦", "subtitle": "你把现实无法安放的部分，交给天空。", "text": "你有一种近乎本能的诗意：会从废墟里看见花，从告别里听见回声。你不是逃避现实，而是拒绝让现实成为唯一的解释。你会替一场雨安排意义，替一个陌生人的背影编写前世。你的灵魂需要飞翔，需要故事，需要那些不能被证明却仍然动人的东西。只是别忘了，真正的生活也需要落地。", "advice": "今日建议：写下一句只属于今天的话。"}};
+const EXTRA=[{"name": "海獭", "emoji": "🦦", "subtitle": "你抱着一块小小的石头，漂过巨大的海。", "text": "你比自己以为的更依赖温暖，也比别人想象的更能独自生活。你懂得在寒冷里寻找一点可以握住的东西：一句话、一首歌、一只旧杯子。你不需要宏大的拯救，你只需要可被确认的小小陪伴。你是那种会把爱保存成日常的人。", "advice": "今日建议：去拥抱一个真实存在的人或物。"}, {"name": "雪豹", "emoji": "🐆", "subtitle": "你把孤独活成了自己的领地。", "text": "你不是没有需求，只是不愿把需求交给不可靠的人。你习惯独自完成、独自消化、独自翻过一座又一座山。你的骄傲保护了你，也隔开了你。真正适合你的关系，不会要求你放弃尊严，而会让你知道：偶尔倚靠，并不会使你变得软弱。", "advice": "今日建议：向可信的人说一句真实的话。"}];
+let idx=0;
+let scores={tender:0,memory:0,freedom:0,cold:0,depth:0,imagination:0};
+
+function begin(){
+ document.getElementById('start').classList.add('hidden');
+ document.getElementById('quiz').classList.remove('hidden');
+ render();
+}
+function render(){
+ const q=QUESTIONS[idx];
+ document.getElementById('count').textContent=(idx+1)+' / '+QUESTIONS.length;
+ document.getElementById('bar').style.width=((idx)/QUESTIONS.length*100)+'%';
+ document.getElementById('question').textContent=q.q;
+ const box=document.getElementById('options'); box.innerHTML='';
+ q.opts.forEach((o,i)=>{
+   const b=document.createElement('button');
+   b.className='btn option';
+   b.textContent=String.fromCharCode(65+i)+'　'+o[0];
+   b.onclick=()=>answer(o[1]);
+   box.appendChild(b);
+ });
+ const st=document.getElementById('stage'); st.classList.remove('fade'); void st.offsetWidth; st.classList.add('fade');
+}
+function answer(add){
+ Object.entries(add).forEach(([k,v])=>scores[k]+=v);
+ idx++;
+ if(idx<QUESTIONS.length) render(); else showResult();
+}
+function showResult(){
+ document.getElementById('bar').style.width='100%';
+ const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+ const top=sorted[0][0];
+ let entry=Object.entries(RESULTS).find(([name,r])=>r.key===top);
+ let name,r;
+ if(entry){name=entry[0];r=entry[1];}
+ else {const ex=EXTRA[Math.floor(Math.random()*EXTRA.length)];name=ex.name;r=ex;}
+ const total=Object.values(scores).reduce((a,b)=>a+b,0)||1;
+ const lit=Math.min(99,Math.round(72+(scores.depth+scores.imagination+scores.memory)/Math.max(1,total)*38));
+ const solitude=Math.min(99,Math.round(45+(scores.depth+scores.cold)/Math.max(1,total)*70));
+ const nostalgia=Math.min(99,Math.round(38+scores.memory/Math.max(1,total)*130));
+ document.getElementById('quiz').classList.add('hidden');
+ document.getElementById('result').classList.remove('hidden');
+ document.getElementById('resultInner').innerHTML=`
+   <div class="eyebrow">你的灵魂物种</div>
+   <div class="result-emoji">${r.emoji}</div>
+   <h2 class="result-title">${name}</h2>
+   <div class="result-sub">${r.subtitle}</div>
+   <div class="meter">
+     <div class="metric"><b>${lit}%</b><span>文艺浓度</span></div>
+     <div class="metric"><b>${solitude}%</b><span>孤独指数</span></div>
+     <div class="metric"><b>${nostalgia}%</b><span>恋旧程度</span></div>
+   </div>
+   <div class="result-text">${r.text}</div>
+   <div class="advice">${r.advice}</div>
+   <div class="row">
+     <button class="btn primary" onclick="copyResult('${name}',${lit},${solitude},${nostalgia})">复制结果文案</button>
+     <button class="btn" onclick="restart()">再走一遍夜路</button>
+   </div>
+   <div class="footer">《二十封没有寄出的信》</div>`;
+}
+async function copyResult(name,lit,sol,nost){
+ const text=`我在《二十封没有寄出的信》里的灵魂动物是：${name}。\n文艺浓度 ${lit}%｜孤独指数 ${sol}%｜恋旧程度 ${nost}%`;
+ try{await navigator.clipboard.writeText(text);alert('结果文案已复制。');}
+ catch(e){prompt('长按复制：',text);}
+}
+function restart(){
+ idx=0;scores={tender:0,memory:0,freedom:0,cold:0,depth:0,imagination:0};
+ document.getElementById('result').classList.add('hidden');
+ document.getElementById('start').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
